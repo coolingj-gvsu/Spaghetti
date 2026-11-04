@@ -1,0 +1,91 @@
+@page "/reports/regional-sales"
+
+@using Microsoft.EntityFrameworkCore
+@using ReportingDashboard.Data
+
+@inject ApplicationDbContext Db
+
+<PageTitle>Regional Sales</PageTitle>
+
+@if (report is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h1>@report.Title</h1>
+    <p>@report.Description</p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Month</th>
+                @foreach (var region in regions)
+                {
+                    <th class="text-end">@region</th>
+                }
+                <th class="text-end">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var month in months)
+            {
+                <tr>
+                    <td>@month.ToString("MMM yyyy")</td>
+                    @foreach (var region in regions)
+                    {
+                        <td class="text-end">
+                            @Amount(month, region).ToString("C0")
+                        </td>
+                    }
+                    <td class="text-end fw-bold">
+                        @MonthTotal(month).ToString("C0")
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td>Total</td>
+                @foreach (var region in regions)
+                {
+                    <td class="text-end">
+                        @RegionTotal(region).ToString("C0")
+                    </td>
+                }
+                <td class="text-end">
+                    @sales.Sum(s => s.Amount).ToString("C0")
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+}
+
+@code {
+    private const int ReportId = 1;
+
+    private Report? report;
+    private List<SalesRecord> sales = [];
+    private List<string> regions = [];
+    private List<DateOnly> months = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        report = await Db.Reports.FindAsync(ReportId);
+
+        // SQLite can't sort or sum decimals, so do that in memory.
+        sales = await Db.SalesRecords.ToListAsync();
+        regions = sales.Select(s => s.Region).Distinct().ToList();
+        months = sales.Select(s => s.Month).Distinct().Order().ToList();
+    }
+
+    private decimal Amount(DateOnly month, string region) =>
+        sales.Where(s => s.Month == month && s.Region == region)
+             .Sum(s => s.Amount);
+
+    private decimal MonthTotal(DateOnly month) =>
+        sales.Where(s => s.Month == month).Sum(s => s.Amount);
+
+    private decimal RegionTotal(string region) =>
+        sales.Where(s => s.Region == region).Sum(s => s.Amount);
+}
