@@ -1,0 +1,39 @@
+@using ReportingDashboard.Data
+@using ReportingDashboard.Services
+
+@inject ActiveUserService ActiveUsers
+@inject NavigationManager Navigation
+
+<form method="post" action="view-as"
+      class="d-flex align-items-center gap-2">
+    <AntiforgeryToken />
+    <input type="hidden" name="returnUrl" value="@returnUrl" />
+    <label for="view-as" class="text-nowrap">View as</label>
+    <select id="view-as" name="userId"
+            class="form-select form-select-sm"
+            onchange="this.form.submit()">
+        @foreach (var user in users)
+        {
+            <option value="@user.UserId"
+                    selected="@(user.UserId == activeUser?.UserId)">
+                @user.GetDisplayName()
+            </option>
+        }
+    </select>
+    <noscript>
+        <button type="submit" class="btn btn-sm btn-primary">Go</button>
+    </noscript>
+</form>
+
+@code {
+    private List<User> users = [];
+    private User? activeUser;
+    private string returnUrl = "/";
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await ActiveUsers.GetAllUsersAsync();
+        activeUser = await ActiveUsers.GetActiveUserAsync();
+        returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+    }
+}

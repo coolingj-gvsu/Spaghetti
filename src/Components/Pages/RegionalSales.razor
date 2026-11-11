@@ -2,14 +2,25 @@
 
 @using Microsoft.EntityFrameworkCore
 @using ReportingDashboard.Data
+@using ReportingDashboard.Services
 
-@inject ApplicationDbContext Db
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ActiveUserService ActiveUsers
 
 <PageTitle>Regional Sales</PageTitle>
 
 @if (report is null)
 {
     <p><em>Loading...</em></p>
+}
+else if (!canView)
+{
+    <h1>Access denied</h1>
+    <p>
+        Your role does not have permission to view
+        <strong>@report.Title</strong>.
+    </p>
+    <a href="reports">Back to reports</a>
 }
 else
 {
@@ -65,16 +76,30 @@ else
     private const int ReportId = 1;
 
     private Report? report;
+    private bool canView;
     private List<SalesRecord> sales = [];
     private List<string> regions = [];
     private List<DateOnly> months = [];
 
     protected override async Task OnInitializedAsync()
     {
-        report = await Db.Reports.FindAsync(ReportId);
+        using var db = DbFactory.CreateDbContext();
+
+        report = await db.Reports.FindAsync(ReportId);
+        if (report is null)
+        {
+            return;
+        }
+
+        // Check permission before loading any of the report's data.
+        canView = await ActiveUsers.CanViewAsync(report);
+        if (!canView)
+        {
+            return;
+        }
 
         // SQLite can't sort or sum decimals, so do that in memory.
-        sales = await Db.SalesRecords.ToListAsync();
+        sales = await db.SalesRecords.ToListAsync();
         regions = sales.Select(s => s.Region).Distinct().ToList();
         months = sales.Select(s => s.Month).Distinct().Order().ToList();
     }

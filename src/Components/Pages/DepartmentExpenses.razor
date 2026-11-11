@@ -1,0 +1,119 @@
+@page "/reports/department-expenses"
+
+@using Microsoft.EntityFrameworkCore
+@using ReportingDashboard.Data
+@using ReportingDashboard.Services
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject ActiveUserService ActiveUsers
+
+<PageTitle>Department Expenses</PageTitle>
+
+@if (report is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!canView)
+{
+    <h1>Access denied</h1>
+    <p>
+        Your role does not have permission to view
+        <strong>@report.Title</strong>.
+    </p>
+    <a href="reports">Back to reports</a>
+}
+else
+{
+    <h1>@report.Title</h1>
+    <p>@report.Description</p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Month</th>
+                @foreach (var department in departments)
+                {
+                    <th class="text-end">@department</th>
+                }
+                <th class="text-end">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var month in months)
+            {
+                <tr>
+                    <td>@month.ToString("MMM yyyy")</td>
+                    @foreach (var department in departments)
+                    {
+                        <td class="text-end">
+                            @Amount(month, department).ToString("C0")
+                        </td>
+                    }
+                    <td class="text-end fw-bold">
+                        @MonthTotal(month).ToString("C0")
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td>Total</td>
+                @foreach (var department in departments)
+                {
+                    <td class="text-end">
+                        @DepartmentTotal(department).ToString("C0")
+                    </td>
+                }
+                <td class="text-end">
+                    @expenses.Sum(e => e.Amount).ToString("C0")
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+}
+
+@code {
+    private const int ReportId = 2;
+
+    private Report? report;
+    private bool canView;
+    private List<ExpenseRecord> expenses = [];
+    private List<string> departments = [];
+    private List<DateOnly> months = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        report = await db.Reports.FindAsync(ReportId);
+        if (report is null)
+        {
+            return;
+        }
+
+        // Check permission before loading any of the report's data.
+        canView = await ActiveUsers.CanViewAsync(report);
+        if (!canView)
+        {
+            return;
+        }
+
+        // SQLite can't sort or sum decimals, so do that in memory.
+        expenses = await db.ExpenseRecords.ToListAsync();
+        departments = expenses
+            .Select(e => e.Department).Distinct().ToList();
+        months = expenses
+            .Select(e => e.Month).Distinct().Order().ToList();
+    }
+
+    private decimal Amount(DateOnly month, string department) =>
+        expenses
+            .Where(e => e.Month == month && e.Department == department)
+            .Sum(e => e.Amount);
+
+    private decimal MonthTotal(DateOnly month) =>
+        expenses.Where(e => e.Month == month).Sum(e => e.Amount);
+
+    private decimal DepartmentTotal(string department) =>
+        expenses.Where(e => e.Department == department).Sum(e => e.Amount);
+}

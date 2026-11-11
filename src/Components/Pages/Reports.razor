@@ -1,0 +1,60 @@
+@page "/reports"
+
+@using ReportingDashboard.Data
+@using ReportingDashboard.Services
+
+@inject ActiveUserService ActiveUsers
+
+<PageTitle>Reports</PageTitle>
+
+<h1>Reports</h1>
+
+@if (reports is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <p>Viewing as <strong>@activeUser?.GetDisplayName()</strong>.</p>
+
+    @if (reports.Count == 0)
+    {
+        <p>No reports are available for this role.</p>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var report in reports)
+            {
+                var hasPage = pages.TryGetValue(report.ReportId, out var path);
+
+                <a class="list-group-item list-group-item-action"
+                   href="@(hasPage ? path : null)">
+                    <h5 class="mb-1">@report.Title</h5>
+                    <p class="mb-1">@report.Description</p>
+                    <small class="text-muted">
+                        @report.Category@(hasPage ? "" : " · Coming soon")
+                    </small>
+                </a>
+            }
+        </div>
+    }
+}
+
+@code {
+    // Report pages that have been built so far, by ReportId.
+    private static readonly Dictionary<int, string> pages = new()
+    {
+        [1] = "reports/regional-sales",
+        [2] = "reports/department-expenses"
+    };
+
+    private User? activeUser;
+    private List<Report>? reports;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activeUser = await ActiveUsers.GetActiveUserAsync();
+        reports = await ActiveUsers.GetPermittedReportsAsync();
+    }
+}

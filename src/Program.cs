@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using ReportingDashboard.Components;
 using ReportingDashboard.Components.Account;
 using ReportingDashboard.Data;
+using Microsoft.AspNetCore.Mvc;
+using ReportingDashboard.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +26,10 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ActiveUserService>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -65,5 +69,24 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+// Saves the "View As" selection in a cookie, then returns to the page.
+app.MapPost("/view-as", (
+    [FromForm] int userId,
+    [FromForm] string? returnUrl,
+    HttpContext context) =>
+{
+    context.Response.Cookies.Append(
+        ActiveUserService.CookieName,
+        userId.ToString(),
+        new CookieOptions { HttpOnly = true, IsEssential = true });
+
+    var isLocal = returnUrl is not null
+        && returnUrl.StartsWith('/')
+        && !returnUrl.StartsWith("//")
+        && !returnUrl.StartsWith("/\\");
+
+    return Results.LocalRedirect(isLocal ? returnUrl! : "/");
+});
 
 app.Run();
