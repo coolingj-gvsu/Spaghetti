@@ -35,21 +35,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 ReportId = 1,
                 Title = "Regional Sales",
                 Description = "Monthly sales total by region.",
-                Category = "Sales"
+                Category = "Sales",
+                PagePath = "reports/regional-sales"
             },
             new Report
             {
                 ReportId = 2,
                 Title = "Department Expenses",
                 Description = "Monthly expenses by department.",
-                Category = "Finance"
+                Category = "Finance",
+                PagePath = "reports/department-expenses"
             },
             new Report
             {
                 ReportId = 3,
                 Title = "Profit Overview",
                 Description = "Company-wide sales compared to expenses.",
-                Category = "Executive"
+                Category = "Executive",
+                PagePath = "reports/profit-overview"
             });
 
         // Employees see sales, managers add expenses, executives see everything. 

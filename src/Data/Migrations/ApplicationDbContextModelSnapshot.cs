@@ -582,6 +582,10 @@ namespace ReportingDashboard.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PagePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -596,6 +600,7 @@ namespace ReportingDashboard.Migrations
                             ReportId = 1,
                             Category = "Sales",
                             Description = "Monthly sales total by region.",
+                            PagePath = "reports/regional-sales",
                             Title = "Regional Sales"
                         },
                         new
@@ -603,6 +608,7 @@ namespace ReportingDashboard.Migrations
                             ReportId = 2,
                             Category = "Finance",
                             Description = "Monthly expenses by department.",
+                            PagePath = "reports/department-expenses",
                             Title = "Department Expenses"
                         },
                         new
@@ -610,6 +616,7 @@ namespace ReportingDashboard.Migrations
                             ReportId = 3,
                             Category = "Executive",
                             Description = "Company-wide sales compared to expenses.",
+                            PagePath = "reports/profit-overview",
                             Title = "Profit Overview"
                         });
                 });

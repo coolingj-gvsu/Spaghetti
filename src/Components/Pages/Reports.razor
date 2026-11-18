@@ -26,10 +26,10 @@ else
         <div class="list-group">
             @foreach (var report in reports)
             {
-                var hasPage = pages.TryGetValue(report.ReportId, out var path);
+                var hasPage = !string.IsNullOrEmpty(report.PagePath);
 
                 <a class="list-group-item list-group-item-action"
-                   href="@(hasPage ? path : null)">
+                   href="@(hasPage ? report.PagePath : null)">
                     <h5 class="mb-1">@report.Title</h5>
                     <p class="mb-1">@report.Description</p>
                     <small class="text-muted">
@@ -42,13 +42,6 @@ else
 }
 
 @code {
-    // Report pages that have been built so far, by ReportId.
-    private static readonly Dictionary<int, string> pages = new()
-    {
-        [1] = "reports/regional-sales",
-        [2] = "reports/department-expenses"
-    };
-
     private User? activeUser;
     private List<Report>? reports;
 
