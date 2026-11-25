@@ -30,6 +30,7 @@ This is a reusable internal reporting framework built for CIS641. It provides ro
 - [Meeting 11/3/26](meetings/GVSU-CIS641-SPAGHETTI-2026-11-3.md)
 - [Meeting 11/10/26](meetings/GVSU-CIS641-SPAGHETTI-2026-11-10.md)
 - [Meeting 11/17/26](meetings/GVSU-CIS641-SPAGHETTI-2026-11-17.md)
+- [Meeting 11/24/26](meetings/GVSU-CIS641-SPAGHETTI-2026-11-24.md)
 
 ## Prerequisites
 
